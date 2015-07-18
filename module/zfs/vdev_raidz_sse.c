@@ -134,6 +134,10 @@
 	asm volatile("movdqa %%xmm13, %0" : "=m" (*(r+6)))
 
 
+static int raidz_parity_have_sse(void) {
+	return (1);
+}
+
 int
 vdev_raidz_p_sse(const void *buf, uint64_t size, void *private)
 {
@@ -153,6 +157,11 @@ vdev_raidz_p_sse(const void *buf, uint64_t size, void *private)
 	kfpu_end();
 	return (0);
 }
+const struct raidz_parity_calls raidz1_sse = {
+	vdev_raidz_p_sse,
+	raidz_parity_have_sse,
+	"p_sse"
+};
 
 int
 vdev_raidz_pq_sse(const void *buf, uint64_t size, void *private)
@@ -178,6 +187,11 @@ vdev_raidz_pq_sse(const void *buf, uint64_t size, void *private)
 	kfpu_end();
 	return (0);
 }
+const struct raidz_parity_calls raidz2_sse = {
+	vdev_raidz_pq_sse,
+	raidz_parity_have_sse,
+	"pq_sse"
+};
 
 int
 vdev_raidz_pqr_sse(const void *buf, uint64_t size, void *private)
@@ -207,6 +221,11 @@ vdev_raidz_pqr_sse(const void *buf, uint64_t size, void *private)
 	kfpu_end();
 	return (0);
 }
+const struct raidz_parity_calls raidz3_sse = {
+	vdev_raidz_pqr_sse,
+	raidz_parity_have_sse,
+	"pqr_sse"
+};
 
 
 #endif

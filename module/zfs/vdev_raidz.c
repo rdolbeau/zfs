@@ -586,6 +586,10 @@ int (*vdev_raidz_p_func)(const void *buf, uint64_t size, void *private);
 int (*vdev_raidz_pq_func)(const void *buf, uint64_t size, void *private);
 int (*vdev_raidz_pqr_func)(const void *buf, uint64_t size, void *private);
 
+static int raidz_parity_have_c(void) {
+	return (1);
+}
+
 static int
 vdev_raidz_p_c(const void *buf, uint64_t size, void *private)
 {
@@ -599,6 +603,11 @@ vdev_raidz_p_c(const void *buf, uint64_t size, void *private)
 		*pqr->p ^= *src;
 	return (0);
 }
+const struct raidz_parity_calls raidz1_c = {
+	vdev_raidz_p_c,
+	raidz_parity_have_c,
+	"p_c"
+};
 
 static int
 vdev_raidz_pq_c(const void *buf, uint64_t size, void *private)
@@ -617,6 +626,11 @@ vdev_raidz_pq_c(const void *buf, uint64_t size, void *private)
 	}
 	return (0);
 }
+const struct raidz_parity_calls raidz2_c = {
+	vdev_raidz_pq_c,
+	raidz_parity_have_c,
+	"pq_c"
+};
 
 static int
 vdev_raidz_pqr_c(const void *buf, uint64_t size, void *private)
@@ -637,54 +651,192 @@ vdev_raidz_pqr_c(const void *buf, uint64_t size, void *private)
 	}
 	return (0);
 }
+const struct raidz_parity_calls raidz3_c = {
+	vdev_raidz_pqr_c,
+	raidz_parity_have_c,
+	"pqr_c"
+};
 
 #if defined(__x86_64__)
-int vdev_raidz_p_sse(const void *buf, uint64_t size, void *private);
-int vdev_raidz_pq_sse(const void *buf, uint64_t size, void *private);
-int vdev_raidz_pqr_sse(const void *buf, uint64_t size, void *private);
-int vdev_raidz_p_avx128(const void *buf, uint64_t size, void *private);
-int vdev_raidz_pq_avx128(const void *buf, uint64_t size, void *private);
-int vdev_raidz_pqr_avx128(const void *buf, uint64_t size, void *private);
-int vdev_raidz_p_avx2(const void *buf, uint64_t size, void *private);
-int vdev_raidz_pq_avx2(const void *buf, uint64_t size, void *private);
-int vdev_raidz_pqr_avx2(const void *buf, uint64_t size, void *private);
+extern const struct raidz_parity_calls raidz1_sse;
+extern const struct raidz_parity_calls raidz2_sse;
+extern const struct raidz_parity_calls raidz3_sse;
+#endif
+#if defined(__aarch64__)
+extern const struct raidz_parity_calls raidz1_neonv8;
+extern const struct raidz_parity_calls raidz2_neonv8;
+extern const struct raidz_parity_calls raidz3_neonv8;
+extern const struct raidz_parity_calls raidz1_neonv8dbl;
+extern const struct raidz_parity_calls raidz2_neonv8dbl;
+extern const struct raidz_parity_calls raidz3_neonv8dbl;
+extern const struct raidz_parity_calls raidz1_neonv8d;
+extern const struct raidz_parity_calls raidz2_neonv8d;
+extern const struct raidz_parity_calls raidz3_neonv8d;
+extern const struct raidz_parity_calls raidz1_neonv8i;
+extern const struct raidz_parity_calls raidz2_neonv8i;
+extern const struct raidz_parity_calls raidz3_neonv8i;
 #endif
 
+#ifdef _KERNEL
+#include <linux/gfp.h>
+
+extern const struct raidz_parity_calls raidz1_avx128;
+extern const struct raidz_parity_calls raidz2_avx128;
+extern const struct raidz_parity_calls raidz3_avx128;
+extern const struct raidz_parity_calls raidz1_avx2;
+extern const struct raidz_parity_calls raidz2_avx2;
+extern const struct raidz_parity_calls raidz3_avx2;
+
+const struct raidz_parity_calls * const raidz1_parity_algos[] = {
+	&raidz1_c,
+#if defined(__x86_64__)
+	&raidz1_sse,
+#endif
+#if defined(__x86_64__) && defined(CONFIG_AS_AVX)
+	&raidz1_avx128,
+#endif
+#if defined(__x86_64__) && defined(CONFIG_AS_AVX2)
+	&raidz1_avx2,
+#endif
+#if defined(__aarch64__)
+	&raidz1_neonv8,
+	&raidz1_neonv8dbl,
+	&raidz1_neonv8d,
+	&raidz1_neonv8i,
+#endif
+	NULL
+};
+const struct raidz_parity_calls * const raidz2_parity_algos[] = {
+	&raidz2_c,
+#if defined(__x86_64__)
+	&raidz2_sse,
+#endif
+#if defined(__x86_64__) && defined(CONFIG_AS_AVX)
+	&raidz2_avx128,
+#endif
+#if defined(__x86_64__) && defined(CONFIG_AS_AVX2)
+	&raidz2_avx2,
+#endif
+#if defined(__aarch64__)
+	&raidz2_neonv8,
+	&raidz2_neonv8dbl,
+	&raidz2_neonv8d,
+	&raidz2_neonv8i,
+#endif
+	NULL
+};
+const struct raidz_parity_calls * const raidz3_parity_algos[] = {
+	&raidz3_c,
+#if defined(__x86_64__)
+	&raidz3_sse,
+#endif
+#if defined(__x86_64__) && defined(CONFIG_AS_AVX)
+	&raidz3_avx128,
+#endif
+#if defined(__x86_64__) && defined(CONFIG_AS_AVX2)
+	&raidz3_avx2,
+#endif
+#if defined(__aarch64__)
+	&raidz3_neonv8,
+	&raidz3_neonv8dbl,
+	&raidz3_neonv8d,
+	&raidz3_neonv8i,
+#endif
+	NULL
+};
+
+#define	RAIDZ_TIME_JIFFIES_LG2 6
+
+static const struct raidz_parity_calls * check_speed(
+		const struct raidz_parity_calls *const *raidz_algos,
+		void *buf, int bc, uint64_t size,
+		void *private, const char *name) {
+	struct pqr_struct *pqr = (struct pqr_struct *)private;
+	const struct raidz_parity_calls *const *algo;
+	const struct raidz_parity_calls *best = NULL;
+	unsigned long perf, bestperf, j0, j1;
+	int i;
+	for (bestperf = 0, best = NULL, algo = raidz_algos; *algo; algo++) {
+		if ((*algo)->valid && !(*algo)->valid())
+			continue;
+		perf = 0;
+		preempt_disable();
+		j0 = jiffies;
+		while ((j1 = jiffies) == j0)
+			cpu_relax();
+		while (time_before(jiffies, j1 + (1<<RAIDZ_TIME_JIFFIES_LG2))) {
+			for (i = 0; i < bc; i ++) {
+				struct pqr_struct pqr2;
+				pqr2.p = pqr->p;
+				pqr2.q = pqr->q;
+				pqr2.r = pqr->r;
+				(*algo)->vdev_raidz_func(buf + i * PAGE_SIZE,
+						size, &pqr2);
+			}
+			perf++;
+		}
+		preempt_enable();
+		printk("raid%s: %-8s %5ld MB/s\n", name, (*algo)->name,
+			(perf*HZ) >> (20-16+RAIDZ_TIME_JIFFIES_LG2));
+		if (perf > bestperf) {
+			bestperf = perf;
+			best = *algo;
+		}
+	}
+	return (best);
+}
+
+#endif
 
 static void vdev_raidz_pick_parity_functions(void) {
-	vdev_raidz_p_func = vdev_raidz_p_c;
-	vdev_raidz_pq_func = vdev_raidz_pq_c;
-	vdev_raidz_pqr_func = vdev_raidz_pqr_c;
-#if defined(__x86_64__)
-#if defined(_KERNEL) && defined(CONFIG_AS_AVX2)
-	if (boot_cpu_has(X86_FEATURE_AVX2)) {
-			vdev_raidz_p_func = vdev_raidz_p_avx2;
-			vdev_raidz_pq_func = vdev_raidz_pq_avx2;
-			vdev_raidz_pqr_func = vdev_raidz_pqr_avx2;
-		printk(KERN_INFO \
-		    "ZFS: using vdev_raidz_*_avx2\n");
-	} else
-#endif
-#if defined(_KERNEL) && defined(CONFIG_AS_AVX)
-		if (boot_cpu_has(X86_FEATURE_AVX)) {
-			vdev_raidz_p_func = vdev_raidz_p_avx128;
-			vdev_raidz_pq_func = vdev_raidz_pq_avx128;
-			vdev_raidz_pqr_func = vdev_raidz_pqr_avx128;
-			printk(KERN_INFO \
-			    "ZFS: using vdev_raidz_*_avx128\n");
-		} else
-#endif
-		{
-			/* x86-64 always has SSE2 */
-			vdev_raidz_p_func = vdev_raidz_p_sse;
-			vdev_raidz_pq_func = vdev_raidz_pq_sse;
-			vdev_raidz_pqr_func = vdev_raidz_pqr_sse;
-#if defined(_KERNEL)
-			printk(KERN_INFO \
-			    "ZFS: using vdev_raidz_*_sse\n");
-#endif
+	if (vdev_raidz_p_func == NULL) {
+#ifdef _KERNEL
+		const struct raidz_parity_calls *t;
+		struct pqr_struct pqr;
+		char *buf;
+		buf = (void *) __get_free_pages(GFP_KERNEL, 3);
+		if (!buf) {
+			printk("ZFS: No memory available for testing.\n");
+			vdev_raidz_p_func = vdev_raidz_p_c;
+			vdev_raidz_pq_func = vdev_raidz_pq_c;
+			vdev_raidz_pqr_func = vdev_raidz_pqr_c;
+			return;
 		}
+		pqr.p = buf + 5 * PAGE_SIZE;
+		pqr.q = NULL;
+		pqr.r = NULL;
+		t = check_speed(raidz1_parity_algos,
+				buf, 5, PAGE_SIZE, &pqr, "Z1");
+		printk("ZFS: picking %s for RAID-Z1\n", t->name);
+		vdev_raidz_p_func = t->vdev_raidz_func;
+		pqr.p = buf + 5 * PAGE_SIZE;
+		pqr.q = buf + 6 * PAGE_SIZE;
+		pqr.r = NULL;
+		t = check_speed(raidz2_parity_algos,
+				buf, 5, PAGE_SIZE, &pqr, "Z2");
+		printk("ZFS: picking %s for RAID-Z2\n", t->name);
+		vdev_raidz_pq_func = t->vdev_raidz_func;
+		pqr.p = buf + 5 * PAGE_SIZE;
+		pqr.q = buf + 6 * PAGE_SIZE;
+		pqr.r = buf + 7 * PAGE_SIZE;
+		t = check_speed(raidz3_parity_algos,
+				buf, 5, PAGE_SIZE, &pqr, "Z3");
+		printk("ZFS: picking %s for RAID-Z3\n", t->name);
+		vdev_raidz_pqr_func = t->vdev_raidz_func;
+
+		free_pages((unsigned long)buf, 3);
+#else
+#if defined(__x86_64__)
+		vdev_raidz_p_func = raidz1_sse.vdev_raidz_func;
+		vdev_raidz_pq_func = raidz2_sse.vdev_raidz_func;
+		vdev_raidz_pqr_func = raidz3_sse.vdev_raidz_func;
+#else
+		vdev_raidz_p_func = raidz1_c.vdev_raidz_func;
+		vdev_raidz_pq_func = raidz2_c.vdev_raidz_func;
+		vdev_raidz_pqr_func = raidz3_c.vdev_raidz_func;
 #endif
+#endif
+	}
 }
 
 static void

@@ -86,6 +86,7 @@ libzpool_la_SOURCES = \
 	$(top_srcdir)/module/zfs/vdev_raidz_sse.c \
 	$(top_srcdir)/module/zfs/vdev_raidz_avx128.c \
 	$(top_srcdir)/module/zfs/vdev_raidz_avx2.c \
+	$(top_srcdir)/module/zfs/vdev_raidz_neonv8.c \
 	$(top_srcdir)/module/zfs/vdev_root.c \
 	$(top_srcdir)/module/zfs/zap.c \
 	$(top_srcdir)/module/zfs/zap_leaf.c \

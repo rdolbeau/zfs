@@ -31,6 +31,11 @@ struct pqr_struct {
 	uint64_t *r;
 };
 
+struct raidz_parity_calls {
+	int (*vdev_raidz_func)(const void *, uint64_t, void *);
+	int  (*valid)(void);	/* Returns 1 if this routine set is usable */
+	const char *name;	/* Name of this routine set */
+};
 
 #define	VDEV_RAIDZ_P		0
 #define	VDEV_RAIDZ_Q		1
@@ -59,7 +64,7 @@ struct pqr_struct {
 	VDEV_RAIDZ_64MUL_2((x), mask); \
 }
 
-#if defined(_KERNEL)
+#if defined(_KERNEL) && defined(__x86_64__)
 #define	kfpu_begin() kernel_fpu_begin()
 #define	kfpu_end() kernel_fpu_end()
 #else

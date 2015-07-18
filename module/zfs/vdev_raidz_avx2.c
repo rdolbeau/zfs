@@ -127,6 +127,11 @@
 	asm volatile("vmovdqa %%ymm9,%0" : "=m" (*(r+8)));		\
 	asm volatile("vmovdqa %%ymm13,%0" : "=m" (*(r+12)))
 
+
+static int raidz_parity_have_avx2(void) {
+	return (boot_cpu_has(X86_FEATURE_AVX2));
+}
+
 int
 vdev_raidz_p_avx2(const void *buf, uint64_t size, void *private)
 {
@@ -146,6 +151,11 @@ vdev_raidz_p_avx2(const void *buf, uint64_t size, void *private)
 	kfpu_end();
 	return (0);
 }
+const struct raidz_parity_calls raidz1_avx2 = {
+	vdev_raidz_p_avx2,
+	raidz_parity_have_avx2,
+	"p_avx2"
+};
 
 int
 vdev_raidz_pq_avx2(const void *buf, uint64_t size, void *private)
@@ -171,6 +181,11 @@ vdev_raidz_pq_avx2(const void *buf, uint64_t size, void *private)
 	kfpu_end();
 	return (0);
 }
+const struct raidz_parity_calls raidz2_avx2 = {
+	vdev_raidz_pq_avx2,
+	raidz_parity_have_avx2,
+	"pq_avx2"
+};
 
 int
 vdev_raidz_pqr_avx2(const void *buf, uint64_t size, void *private)
@@ -200,6 +215,11 @@ vdev_raidz_pqr_avx2(const void *buf, uint64_t size, void *private)
 	kfpu_end();
 	return (0);
 }
+const struct raidz_parity_calls raidz3_avx2 = {
+	vdev_raidz_pqr_avx2,
+	raidz_parity_have_avx2,
+	"pqr_avx2"
+};
 
 
 #endif

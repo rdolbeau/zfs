@@ -127,6 +127,11 @@
 	asm volatile("vmovdqa %%xmm9,%0" : "=m" (*(r+4)));		\
 	asm volatile("vmovdqa %%xmm13,%0" : "=m" (*(r+6)))
 
+
+static int raidz_parity_have_avx128(void) {
+	return (boot_cpu_has(X86_FEATURE_AVX));
+}
+
 int
 vdev_raidz_p_avx128(const void *buf, uint64_t size, void *private)
 {
@@ -146,6 +151,11 @@ vdev_raidz_p_avx128(const void *buf, uint64_t size, void *private)
 	kfpu_end();
 	return (0);
 }
+const struct raidz_parity_calls raidz1_avx128 = {
+	vdev_raidz_p_avx128,
+	raidz_parity_have_avx128,
+	"p_avx128"
+};
 
 int
 vdev_raidz_pq_avx128(const void *buf, uint64_t size, void *private)
@@ -171,6 +181,11 @@ vdev_raidz_pq_avx128(const void *buf, uint64_t size, void *private)
 	kfpu_end();
 	return (0);
 }
+const struct raidz_parity_calls raidz2_avx128 = {
+	vdev_raidz_pq_avx128,
+	raidz_parity_have_avx128,
+	"pq_avx128"
+};
 
 int
 vdev_raidz_pqr_avx128(const void *buf, uint64_t size, void *private)
@@ -200,6 +215,11 @@ vdev_raidz_pqr_avx128(const void *buf, uint64_t size, void *private)
 	kfpu_end();
 	return (0);
 }
+const struct raidz_parity_calls raidz3_avx128 = {
+	vdev_raidz_pqr_avx128,
+	raidz_parity_have_avx128,
+	"pqr_avx128"
+};
 
 
 #endif
