@@ -93,6 +93,7 @@ KERNEL_C = \
 	vdev_raidz_sse.c \
 	vdev_raidz_avx128.c \
 	vdev_raidz_avx2.c \
+	vdev_raidz_neonv8.c \
 	vdev_root.c \
 	zap.c \
 	zap_leaf.c \
