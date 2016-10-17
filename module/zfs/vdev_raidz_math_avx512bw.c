@@ -25,6 +25,7 @@
 #include <sys/isa_defs.h>
 
 #if defined(__x86_64) && defined(HAVE_AVX512BW)
+#if 0 /* disabled until tested on the hardware */
 
 #include <sys/types.h>
 #include <linux/simd_x86.h>
@@ -425,4 +426,5 @@ const raidz_impl_ops_t vdev_raidz_avx512bw_impl = {
 	.name = "avx512bw"
 };
 
+#endif
 #endif /* defined(__x86_64) && defined(HAVE_AVX512BW) */
