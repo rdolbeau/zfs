@@ -230,3 +230,89 @@ const fletcher_4_ops_t fletcher_4_ssse3_ops = {
 };
 
 #endif /* defined(HAVE_SSE2) && defined(HAVE_SSSE3) */
+
+
+
+#if defined(HAVE_SSE2) && defined(HAVE_SSSE3) && defined(HAVE_SSE4_1)
+static void
+fletcher_4_sse41_native(fletcher_4_ctx_t *ctx, const void *buf, uint64_t size)
+{
+	const uint64_t *ip = buf;
+	const uint64_t *ipend = (uint64_t *)((uint8_t *)ip + size);
+
+	kfpu_begin();
+
+	FLETCHER_4_SSE_RESTORE_CTX(ctx);
+
+	for (; ip < ipend; ip += 2) {
+		asm volatile("pmovzxdq %0, %%xmm5"::"m" (*(ip+0)));
+		asm volatile("pmovzxdq %0, %%xmm6"::"m" (*(ip+1)));
+		asm volatile("paddq %xmm5, %xmm0");
+		asm volatile("paddq %xmm0, %xmm1");
+		asm volatile("paddq %xmm1, %xmm2");
+		asm volatile("paddq %xmm2, %xmm3");
+		asm volatile("paddq %xmm6, %xmm0");
+		asm volatile("paddq %xmm0, %xmm1");
+		asm volatile("paddq %xmm1, %xmm2");
+		asm volatile("paddq %xmm2, %xmm3");
+	}
+
+	FLETCHER_4_SSE_SAVE_CTX(ctx);
+
+	kfpu_end();
+}
+
+static void
+fletcher_4_sse41_byteswap(fletcher_4_ctx_t *ctx, const void *buf, uint64_t size)
+{
+	static const zfs_fletcher_sse_t mask = {
+		.v = { 0x0405060700010203, 0x0C0D0E0F08090A0B }
+	};
+
+	const uint64_t *ip = buf;
+	const uint64_t *ipend = (uint64_t *)((uint8_t *)ip + size);
+
+	kfpu_begin();
+
+	FLETCHER_4_SSE_RESTORE_CTX(ctx);
+
+	asm volatile("movdqu %0, %%xmm7"::"m" (mask));
+
+	for (; ip < ipend; ip += 2) {
+		asm volatile("pmovzxdq %0, %%xmm5"::"m" (*(ip+0)));
+		asm volatile("pmovzxdq %0, %%xmm6"::"m" (*(ip+1)));
+		asm volatile("pshufb %xmm7, %xmm5");
+		asm volatile("pshufb %xmm7, %xmm6");
+		asm volatile("paddq %xmm5, %xmm0");
+		asm volatile("paddq %xmm0, %xmm1");
+		asm volatile("paddq %xmm1, %xmm2");
+		asm volatile("paddq %xmm2, %xmm3");
+		asm volatile("paddq %xmm6, %xmm0");
+		asm volatile("paddq %xmm0, %xmm1");
+		asm volatile("paddq %xmm1, %xmm2");
+		asm volatile("paddq %xmm2, %xmm3");
+	}
+
+	FLETCHER_4_SSE_SAVE_CTX(ctx);
+
+	kfpu_end();
+}
+
+static boolean_t fletcher_4_sse41_valid(void)
+{
+	return (kfpu_allowed() && zfs_sse2_available() &&
+	    zfs_ssse3_available() && zfs_sse4_1_available());
+}
+
+const fletcher_4_ops_t fletcher_4_sse41_ops = {
+	.init_native = fletcher_4_sse2_init,
+	.fini_native = fletcher_4_sse2_fini,
+	.compute_native = fletcher_4_sse41_native,
+	.init_byteswap = fletcher_4_sse2_init,
+	.fini_byteswap = fletcher_4_sse2_fini,
+	.compute_byteswap = fletcher_4_sse41_byteswap,
+	.valid = fletcher_4_sse41_valid,
+	.name = "sse4_1"
+};
+
+#endif /* defined(HAVE_SSE2) && defined(HAVE_SSSE3) && defined(HAVE_SSE4_1 */
